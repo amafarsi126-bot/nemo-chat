@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Nimo Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #6366F1;
+  --accent: #A855F7;
+  --cyan: #06B6D4;
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --surface2: #263348;
+  --fg: #F1F5F9;
+  --muted: #94A3B8;
+  --border: #334155;
+  --success: #10B981;
+  --error: #F43F5E;
+  --warning: #F59E0B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: #0a0f1e;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100dvh;
+}
+/* Phone shell */
+.phone {
+  width: min(390px, 100vw);
+  height: min(844px, 100dvh);
+  background: var(--bg);
+  border-radius: min(44px, 0px);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  position: relative;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.8);
+}
+@media (min-width: 430px) {
+  .phone { border-radius: 44px; border: 8px solid #1a1a2e; }
+}
+/* Screens */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  will-change: transform;
+}
+.screen.hidden { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+/* Status bar */
+.statusbar {
+  height: 48px; background: var(--bg);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 20px 8px; font-size: 12px; font-weight: 700;
+  color: var(--fg); flex-shrink: 0;
+}
+/* Header */
+.header { padding: 10px 16px 12px; flex-shrink: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.logo-row { display: flex; align-items: center; gap: 8px; }
+.logo-name {
+  font-size: 26px; font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, #7C3AED, #2563EB, #06B6D4);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hbtns { display: flex; gap: 8px; }
+.hbtn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; cursor: pointer;
+}
+.hbtn:active { opacity: 0.6; }
+.searchbar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 24px; padding: 11px 16px; cursor: pointer;
+}
+.searchbar span { font-size: 14px; color: var(--muted); }
+/* Stories */
+.stories {
+  display: flex; overflow-x: auto; padding: 12px 10px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  scrollbar-width: none; gap: 4px;
+}
+.stories::-webkit-scrollbar { display: none; }
+.story { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px; cursor: pointer; }
+.story-ring {
+  width: 62px; height: 62px; border-radius: 50%; padding: 2.5px;
+  background: conic-gradient(var(--primary), var(--accent), var(--cyan), var(--primary));
+  position: relative;
+}
+.story-ring.empty { background: var(--border); }
+.story-av {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: var(--surface2); border: 2.5px solid var(--bg);
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.story-plus {
+  position: absolute; bottom: 0; right: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; border: 2px solid var(--bg);
+}
+.story-label { font-size: 11px; color: var(--fg); font-weight: 500; }
+/* Filters */
+.filters {
+  display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0; scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 16px; border-radius: 20px; font-family: 'Cairo', sans-serif;
+  font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.chip.on { background: var(--primary); border-color: var(--primary); color: white; }
+/* Chat list */
+.chatlist { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.chatlist::-webkit-scrollbar { display: none; }
+/* Empty state */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; gap: 12px; padding: 40px 30px;
+}
+.empty-icon { font-size: 60px; }
+.empty-title { font-size: 18px; font-weight: 800; color: var(--fg); }
+.empty-sub { font-size: 14px; color: var(--muted); text-align: center; line-height: 24px; }
+/* Chat items */
+.chat-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; margin: 3px 10px; border-radius: 16px; cursor: pointer;
+}
+.chat-item:active { background: var(--surface); }
+.av-wrap { position: relative; flex-shrink: 0; }
+.av {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  border: 2px solid var(--surface);
+}
+.sdot {
+  position: absolute; bottom: 1px; right: 1px;
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 3px solid var(--bg); font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.s-on { background: var(--success); }
+.s-game { background: var(--primary); }
+.s-live { background: var(--error); }
+.s-off { background: #475569; }
+.chat-info { flex: 1; min-width: 0; }
+.cname { font-size: 15px; font-weight: 700; color: var(--fg); margin-bottom: 2px; }
+.cstatus { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.cmsg { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.ctime { font-size: 11px; color: var(--muted); }
+.badge {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white; font-size: 11px; font-weight: 700;
+  min-width: 22px; height: 22px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; padding: 0 5px;
+}
+/* FAB */
+.fab {
+  position: absolute; bottom: 76px; right: 16px;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; cursor: pointer; z-index: 20;
+  box-shadow: 0 4px 20px rgba(99,102,241,0.5);
+}
+.fab:active { transform: scale(0.92); }
+/* New chat modal */
+.modal-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); z-index: 50; display: none;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 20px; width: 100%;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-title { font-size: 17px; font-weight: 800; color: var(--fg); margin-bottom: 16px; }
+.modal-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 16px; color: var(--fg);
+  font-family: 'Cairo', sans-serif; font-size: 15px; outline: none;
+  margin-bottom: 12px; direction: rtl;
+}
+.modal-input::placeholder { color: var(--muted); }
+.modal-btn {
+  width: 100%; background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none; border-radius: 14px; padding: 13px;
+  color: white; font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer;
+}
+.modal-btn:active { opacity: 0.85; }
+.modal-cancel {
+  width: 100%; background: none; border: none; color: var(--muted);
+  font-family: 'Cairo', sans-serif; font-size: 14px; margin-top: 10px;
+  cursor: pointer; padding: 8px;
+}
+/* Tab bar */
+.tabbar {
+  display: flex; background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 8px 0 12px; flex-shrink: 0;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; cursor: pointer; padding: 2px 0;
+}
+.tab:active { opacity: 0.6; }
+.tab-ic { font-size: 22px; }
+.tab-lb { font-size: 10px; font-family: 'Cairo', sans-serif; color: var(--muted); font-weight: 600; }
+.tab.on .tab-lb { color: var(--primary); }
+.tab-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); }
+
+/* ===== CHAT DETAIL ===== */
+.chat-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+}
+.back { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; flex-shrink: 0; }
+.back:active { opacity: 0.6; }
+.chat-hdr-av {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.chat-hdr-info { flex: 1; }
+.chat-hdr-name { font-size: 15px; font-weight: 700; color: var(--fg); }
+.chat-hdr-sub { font-size: 11px; font-weight: 600; margin-top: 1px; }
+.tr-btn {
+  padding: 6px 10px; border-radius: 14px; font-family: 'Cairo', sans-serif;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  background: rgba(99,102,241,0.15); color: var(--primary);
+  border: 1px solid rgba(99,102,241,0.3); white-space: nowrap;
+}
+.tr-btn.on { background: rgba(99,102,241,0.3); }
+/* Messages */
+.msgs { flex: 1; overflow-y: auto; padding: 12px 0; display: flex; flex-direction: column; gap: 2px; scrollbar-width: none; }
+.msgs::-webkit-scrollbar { display: none; }
+.msg-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 14px; padding: 40px; text-align: center; }
+.mrow { padding: 4px 14px; display: flex; }
+.mrow.own { justify-content: flex-end; }
+.mbubble {
+  max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5;
+}
+.mbubble.own { background: linear-gradient(135deg, var(--primary), #4F46E5); color: white; border-bottom-right-radius: 4px; }
+.mbubble.other { background: var(--surface); color: var(--fg); border-bottom-left-radius: 4px; }
+.mbubble.game { background: var(--surface2); border: 1.5px solid var(--primary); text-align: center; padding: 14px; border-radius: 18px; }
+.mtime { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; }
+.tr-tag { font-size: 11px; color: var(--primary); font-weight: 700; margin-top: 4px; cursor: pointer; }
+.tr-box { background: rgba(99,102,241,0.1); border-radius: 10px; padding: 8px 12px; margin-top: 4px; border-right: 3px solid var(--primary); font-size: 13px; font-style: italic; color: var(--muted); direction: ltr; text-align: left; display: none; }
+.tr-box.show { display: block; }
+/* Games panel */
+.gpanel { background: var(--surface); border-top: 1px solid var(--border); padding: 14px; flex-shrink: 0; display: none; }
+.gpanel.show { display: block; }
+.gpanel-title { font-size: 14px; font-weight: 700; color: var(--fg); margin-bottom: 10px; }
+.ggrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gcard {
+  background: var(--surface2); border-radius: 14px; padding: 12px;
+  text-align: center; cursor: pointer; border: 1.5px solid var(--border);
+}
+.gcard:active { background: rgba(99,102,241,0.15); border-color: var(--primary); }
+.gc-em { font-size: 28px; display: block; margin-bottom: 4px; }
+.gc-name { font-size: 13px; font-weight: 700; color: var(--fg); }
+.gc-pl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+/* Input */
+.input-area {
+  display: flex; align-items: flex-end; gap: 6px;
+  padding: 10px; border-top: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+}
+.ibtn {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;
+}
+.ibtn:active { opacity: 0.7; }
+.ibtn.on { background: rgba(99,102,241,0.2); border-color: var(--primary); }
+.minput {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 22px; padding: 10px 16px; color: var(--fg);
+  font-family: 'Cairo', sans-serif; font-size: 14px; outline: none;
+  resize: none; max-height: 100px; line-height: 1.4; direction: rtl;
+}
+.minput::placeholder { color: var(--muted); }
+.sbtn {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none; color: white; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.4);
+}
+.sbtn:active { transform: scale(0.9); }
+/* Effects */
+.efx { display: none; flex-direction: row; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg); overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+.efx.show { display: flex; }
+.efx-chip { padding: 7px 14px; border-radius: 20px; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.efx-chip:active { opacity: 0.7; }
+
+/* ===== GAMES SCREEN ===== */
+.gs-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.gs-title { font-size: 18px; font-weight: 800; color: var(--fg); }
+.gs-grid { flex: 1; overflow-y: auto; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; scrollbar-width: none; }
+.gs-grid::-webkit-scrollbar { display: none; }
+.gs-card {
+  background: var(--surface); border-radius: 20px; padding: 18px 14px;
+  text-align: center; cursor: pointer; border: 1.5px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.gs-card:active { border-color: var(--primary); }
+.gs-em { font-size: 40px; display: block; margin-bottom: 8px; }
+.gs-name { font-size: 15px; font-weight: 700; color: var(--fg); margin-bottom: 3px; }
+.gs-pl { font-size: 12px; color: var(--muted); }
+.gs-online { margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--success); }
+.gs-soon { color: var(--muted); }
+
+/* ===== SETTINGS ===== */
+.sets-scroll { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.sets-scroll::-webkit-scrollbar { display: none; }
+.profile-card {
+  margin: 14px; background: var(--surface); border-radius: 20px;
+  padding: 20px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--border);
+}
+.pav { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+.pname { font-size: 18px; font-weight: 800; color: var(--fg); }
+.pstatus { font-size: 13px; color: var(--success); margin-top: 2px; }
+.pedit { margin-right: auto; padding: 7px 14px; border-radius: 14px; background: rgba(99,102,241,0.15); color: var(--primary); border: 1px solid rgba(99,102,241,0.3); font-family: 'Cairo',sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+.sets-sec { padding: 6px 14px 4px; }
+.sets-lbl { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 6px; padding-right: 4px; }
+.sets-grp { background: var(--surface); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
+.srow { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; border-bottom: 1px solid var(--border); }
+.srow:last-child { border-bottom: none; }
+.srow:active { background: var(--surface2); }
+.sic { font-size: 20px; flex-shrink: 0; }
+.srow-txt { flex: 1; }
+.slbl { font-size: 14px; font-weight: 600; color: var(--fg); }
+.ssub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.sarr { color: var(--muted); font-size: 16px; }
+.tgl { width: 46px; height: 26px; border-radius: 13px; background: var(--border); position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.tgl.on { background: var(--primary); }
+.tgl-k { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.tgl.on .tgl-k { transform: translateX(-20px); }
+
+/* LIVE */
+.live-bg {
+  flex: 1; background: linear-gradient(160deg, #0F172A 0%, #1a0533 60%, #0F172A 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.live-close-btn { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
+.live-av-big { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 55px; margin-bottom: 14px; box-shadow: 0 0 60px rgba(99,102,241,0.4); }
+.live-badge { background: var(--error); color: white; border-radius: 8px; padding: 4px 12px; font-size: 13px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }
+.live-name { font-size: 20px; font-weight: 700; color: white; margin-bottom: 4px; }
+.live-view { font-size: 13px; color: rgba(255,255,255,0.6); }
+.live-comments { position: absolute; bottom: 20px; left: 0; right: 0; padding: 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.lcmt { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); border-radius: 20px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 8px; width: fit-content; }
+.lcmt-txt { font-size: 13px; color: white; }
+.live-acts { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 14px; }
+.lact { width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; gap: 2px; }
+.lact-n { font-size: 9px; color: white; font-weight: 700; }
+.live-bar { background: rgba(0,0,0,0.8); padding: 10px 14px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.live-inp { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 22px; padding: 10px 16px; color: white; font-family: 'Cairo',sans-serif; font-size: 13px; outline: none; direction: rtl; }
+.live-inp::placeholder { color: rgba(255,255,255,0.4); }
+.lreact { font-size: 24px; cursor: pointer; }
+@keyframes floatUp { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(-180px) scale(1.4); opacity: 0; } }
+.float-e { position: absolute; font-size: 28px; animation: floatUp 1.8s ease-out forwards; pointer-events: none; }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.blink { animation: blink 1.2s infinite; }
+
+/* ===== MONETIZATION ===== */
+.gifts-panel {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px); z-index: 60; display: none;
+  align-items: flex-end;
+}
+.gifts-panel.show { display: flex; }
+.gifts-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 20px; width: 100%;
+  animation: slideUp 0.3s ease;
+}
+.gifts-title { font-size: 16px; font-weight: 800; color: var(--fg); margin-bottom: 6px; }
+.gifts-balance { font-size: 12px; color: var(--warning); font-weight: 700; margin-bottom: 14px; }
+.gifts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.gift-item {
+  background: var(--surface2); border-radius: 14px; padding: 10px 6px;
+  text-align: center; cursor: pointer; border: 1.5px solid var(--border);
+  transition: all 0.2s;
+}
+.gift-item:active { border-color: var(--warning); background: rgba(245,158,11,0.15); transform: scale(0.95); }
+.gift-em { font-size: 28px; display: block; margin-bottom: 4px; }
+.gift-name { font-size: 10px; color: var(--fg); font-weight: 600; }
+.gift-price { font-size: 10px; color: var(--warning); font-weight: 700; margin-top: 2px; }
+.buy-coins-btn {
+  width: 100%; background: linear-gradient(135deg, #F59E0B, #EF4444);
+  border: none; border-radius: 14px; padding: 13px;
+  color: white; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; margin-bottom: 10px;
+}
+.support-btn-live {
+  width: 100%; background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none; border-radius: 14px; padding: 13px;
+  color: white; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+}
+.gifts-close { width: 100%; background: none; border: none; color: var(--muted); font-family: 'Cairo',sans-serif; font-size: 14px; margin-top: 10px; cursor: pointer; padding: 8px; }
+
+/* Coins shop */
+.coins-panel {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px); z-index: 70; display: none; align-items: flex-end;
+}
+.coins-panel.show { display: flex; }
+.coins-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 20px; width: 100%; animation: slideUp 0.3s ease;
+}
+.coins-title { font-size: 16px; font-weight: 800; color: var(--fg); margin-bottom: 4px; }
+.coins-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.coins-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.coin-pack {
+  background: var(--surface2); border-radius: 16px; padding: 14px;
+  text-align: center; cursor: pointer; border: 1.5px solid var(--border);
+  position: relative; transition: all 0.2s;
+}
+.coin-pack:active { border-color: var(--warning); transform: scale(0.97); }
+.coin-pack.popular { border-color: var(--warning); }
+.popular-tag {
+  position: absolute; top: -10px; right: 50%; transform: translateX(50%);
+  background: var(--warning); color: white; font-size: 10px; font-weight: 800;
+  padding: 2px 10px; border-radius: 10px;
+}
+.coin-em { font-size: 28px; display: block; margin-bottom: 6px; }
+.coin-amount { font-size: 16px; font-weight: 800; color: var(--warning); }
+.coin-price { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.coins-note { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+.coins-close { width: 100%; background: none; border: none; color: var(--muted); font-family: 'Cairo',sans-serif; font-size: 14px; cursor: pointer; padding: 8px; }
+
+/* Support button in live */
+.support-live-btn {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none; border-radius: 20px; padding: 8px 16px;
+  color: white; font-family: 'Cairo',sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.support-live-btn:active { opacity: 0.8; }
+
+/* Streamer badge */
+.streamer-badge {
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  color: white; font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 8px; margin-right: 6px;
+}
+
+/* Gift notification floating */
+.gift-notif {
+  position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+  border-radius: 24px; padding: 10px 20px;
+  display: flex; align-items: center; gap: 10px;
+  animation: giftPop 2.5s ease-out forwards; pointer-events: none; z-index: 80;
+  white-space: nowrap;
+}
+@keyframes giftPop {
+  0% { opacity:0; transform: translateX(-50%) scale(0.7); }
+  15% { opacity:1; transform: translateX(-50%) scale(1.05); }
+  80% { opacity:1; }
+  100% { opacity:0; transform: translateX(-50%) scale(0.9); }
+}
+.gift-notif-em { font-size: 28px; }
+.gift-notif-txt { font-size: 13px; color: white; font-weight: 600; }
+.gift-notif-val { font-size: 13px; color: var(--warning); font-weight: 800; }
+
+/* Revenue counter */
+.revenue-bar {
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+  padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.1);
+}
+.rev-item { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }
+.rev-coins { color: var(--warning); }
+.rev-viewers { color: var(--cyan); }
+.rev-hearts { color: var(--error); }
+
+/* ===== AI ASSISTANT ===== */
+.ai-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.ai-av { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 0 16px rgba(99,102,241,0.4); }
+.ai-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--success); flex-shrink: 0; animation: pai 1.5s infinite; }
+@keyframes pai { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.4);} 50%{box-shadow:0 0 0 6px rgba(16,185,129,0);} }
+.ai-title { font-size: 16px; font-weight: 800; color: var(--fg); }
+.ai-sub { font-size: 11px; color: var(--success); margin-top: 1px; font-weight: 600; }
+.ai-toggle-row { margin: 14px 16px; background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
+.ai-toggle-info { flex: 1; }
+.ai-toggle-label { font-size: 14px; font-weight: 700; color: var(--fg); }
+.ai-toggle-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.ai-config { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+.ai-section-lbl { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+.ai-textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; color: var(--fg); font-family: 'Cairo', sans-serif; font-size: 13px; line-height: 1.6; outline: none; resize: none; direction: rtl; min-height: 80px; }
+.ai-textarea::placeholder { color: var(--muted); }
+.ai-textarea:focus { border-color: var(--primary); }
+.ai-tone-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tone-chip { padding: 7px 14px; border-radius: 20px; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--surface); border: 1.5px solid var(--border); color: var(--fg); transition: all 0.2s; }
+.tone-chip.on { background: rgba(99,102,241,0.2); border-color: var(--primary); color: var(--primary); }
+.ai-save-btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 14px; padding: 14px; color: white; font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+.ai-save-btn:active { opacity: 0.85; }
+.ai-stats { display: flex; gap: 8px; padding: 0 16px 12px; }
+.ai-stat { flex: 1; background: var(--surface); border-radius: 14px; padding: 12px; text-align: center; border: 1px solid var(--border); }
+.ai-stat-num { font-size: 20px; font-weight: 800; color: var(--primary); }
+.ai-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.biz-card { margin: 0 0 12px; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1)); border-radius: 16px; padding: 14px 16px; border: 1px solid rgba(99,102,241,0.3); }
+.biz-card-title { font-size: 13px; font-weight: 700; color: var(--fg); margin-bottom: 4px; }
+.biz-card-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.ai-typing { display: flex; align-items: center; gap: 8px; padding: 4px 14px; }
+.ai-typing-av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.typing-dots { display: flex; gap: 4px; align-items: center; background: var(--surface); padding: 10px 14px; border-radius: 16px; border-bottom-left-radius: 4px; }
+.typing-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: tdot 1.2s infinite; }
+.typing-dot:nth-child(2){animation-delay:0.2s;} .typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:0.4;} 30%{transform:translateY(-6px);opacity:1;} }
+.ai-badge-msg { font-size: 10px; background: linear-gradient(135deg,var(--primary),var(--cyan)); color: white; padding: 2px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-bottom: 4px; }
+</style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLbvl72qymOS4xQtUft0vAFWmh9y83XXE",
+      authDomain: "nemo-chat-9d057.firebaseapp.com",
+      projectId: "nemo-chat-9d057",
+      storageBucket: "nemo-chat-9d057.firebasestorage.app",
+      messagingSenderId: "976118231236",
+      appId: "1:976118231236:web:bf40284bba814a67c25991",
+      measurementId: "G-CGFDL56X26"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Sign in anonymously
+    signInAnonymously(auth);
+
+    // Expose to window
+    window._fb = { db, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc, auth };
+    window._fbReady = true;
+    window.dispatchEvent(new Event('fbReady'));
+  
+// ══ FIREBASE REAL MESSAGING ══
+let currentListener = null;
+let myUserId = null;
+
+window.addEventListener('fbReady', () => {
+  window._fb.auth && window._fb.auth.onAuthStateChanged && 
+  getAuthUser();
+});
+
+function getAuthUser() {
+  if(!window._fb) return;
+  window._fb.auth.onAuthStateChanged(user => {
+    if(user) { myUserId = user.uid; console.log('Auth:', myUserId); }
+  });
+}
+
+// Override openChat to listen to real Firebase messages
+const _origOpenChat = openChat;
+window.openChat = function(id) {
+  // Stop previous listener
+  if(currentListener) { currentListener(); currentListener = null; }
+  
+  activeChatId = id;
+  const chat = chats.find(c => c.id === id);
+  if(!chat) return;
+  chat.unread = 0;
+  document.getElementById('chatName').textContent = chat.name;
+  document.getElementById('chatAv').textContent = chat.av;
+  renderChats();
+  go('s-chat');
+
+  // Listen to real messages from Firebase
+  if(window._fb) {
+    const { db, collection, query, orderBy, onSnapshot } = window._fb;
+    const chatId = 'chat_' + id;
+    const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'asc'));
+    currentListener = onSnapshot(q, (snapshot) => {
+      const fbMsgs = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        fbMsgs.push({
+          id: doc.id,
+          text: d.text,
+          own: d.userId === myUserId,
+          time: d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}) : getTime(),
+          isAI: d.isAI || false,
+          type: d.type || 'text',
+          gameTitle: d.gameTitle,
+          gameEm: d.gameEm
+        });
+      });
+      chat.msgs = fbMsgs;
+      renderMsgs(chat);
+    });
+  }
+};
+
+// Override sendMsg to save to Firebase
+const _origSendMsg2 = window.sendMsg;
+window.sendMsg = async function() {
+  const inp = document.getElementById('msgIn');
+  const text = inp.value.trim();
+  if(!text || !activeChatId) return;
+
+  inp.value = ''; inp.style.height = 'auto';
+  gOpen = false; eOpen = false;
+  document.getElementById('gpanel').classList.remove('show');
+  document.getElementById('efx').classList.remove('show');
+  document.getElementById('gBtn').classList.remove('on');
+  document.getElementById('eBtn').classList.remove('on');
+
+  if(window._fb) {
+    const { db, collection, addDoc, serverTimestamp } = window._fb;
+    const chatId = 'chat_' + activeChatId;
+    await addDoc(collection(db, 'chats', chatId, 'messages'), {
+      text,
+      userId: myUserId || 'anon',
+      timestamp: serverTimestamp(),
+      isAI: false,
+      type: 'text'
+    });
+    // Save chat info
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'chatList', String(activeChatId)), {
+      name: chats.find(c=>c.id===activeChatId)?.name || '',
+      lastMsg: text,
+      updatedAt: serverTimestamp()
+    }, {merge: true});
+  } else {
+    // Fallback local
+    const chat = chats.find(c=>c.id===activeChatId);
+    if(chat) { chat.msgs.push({text, own:true, time:getTime()}); renderMsgs(chat); renderChats(); }
+  }
+
+  // AI reply
+  if(aiEnabled && activeChatId) {
+    setTimeout(async () => {
+      const reply = await getAIReply(text);
+      if(window._fb) {
+        const { db, collection, addDoc, serverTimestamp } = window._fb;
+        const chatId = 'chat_' + activeChatId;
+        await addDoc(collection(db, 'chats', chatId, 'messages'), {
+          text: reply,
+          userId: 'ai-nemo',
+          timestamp: serverTimestamp(),
+          isAI: true,
+          type: 'text'
+        });
+        aiCount++;
+        document.getElementById('aiReplied').textContent = aiCount;
+        document.getElementById('aiSatisfied').textContent = Math.min(97, 70+aiCount*4)+'%';
+        document.getElementById('aiActive').textContent = chats.length;
+      }
+    }, 1000 + Math.random()*800);
+  }
+};
+
+// Game invite to Firebase
+const _origSendGame2 = sendGame;
+window.sendGame = async function(title, em) {
+  if(window._fb && activeChatId) {
+    const { db, collection, addDoc, serverTimestamp } = window._fb;
+    const chatId = 'chat_' + activeChatId;
+    await addDoc(collection(db, 'chats', chatId, 'messages'), {
+      text: '',
+      userId: myUserId || 'anon',
+      timestamp: serverTimestamp(),
+      type: 'game',
+      gameTitle: title,
+      gameEm: em
+    });
+  }
+  toggleGames();
+};
+
+// Connection status indicator
+function showConnectionStatus(online) {
+  let bar = document.getElementById('conn-bar');
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'conn-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-weight:700;z-index:9999;transition:all 0.3s;font-family:Cairo,sans-serif';
+    document.body.appendChild(bar);
+  }
+  if(online) {
+    bar.style.background = '#10B981'; bar.style.color = 'white';
+    bar.textContent = '✅ متصل — الرسائل تُحفظ مباشرة';
+    setTimeout(() => bar.style.display = 'none', 3000);
+  } else {
+    bar.style.background = '#F43F5E'; bar.style.color = 'white';
+    bar.style.display = 'block';
+    bar.textContent = '⚠️ انقطع الاتصال — تأكدي من النت';
+  }
+}
+
+window.addEventListener('online', () => showConnectionStatus(true));
+window.addEventListener('offline', () => showConnectionStatus(false));
+window.addEventListener('fbReady', () => showConnectionStatus(true));
+
+</script>
+</head>
+<body>
+<div class="phone">
+
+<!-- ════════ SCREEN: HOME ════════ -->
+<div class="screen" id="s-home">
+  <div class="statusbar"><span id="clk">9:41</span><span>📶 🔋</span></div>
+
+  <div class="header">
+    <div class="topbar">
+      <div class="logo-row">
+        <svg width="34" height="34" viewBox="0 0 100 100" fill="none">
+          <defs>
+            <linearGradient id="ng" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7C3AED"/><stop offset="50%" stop-color="#2563EB"/><stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+            <linearGradient id="bg2" x1="60" y1="0" x2="100" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+          </defs>
+          <path d="M12 88 L12 14 L26 14 L66 62 L66 14 L80 14 L80 88 L66 88 L26 40 L26 88 Z" fill="url(#ng)"/>
+          <circle cx="78" cy="16" r="18" fill="url(#bg2)"/>
+          <circle cx="71" cy="16" r="3" fill="white"/><circle cx="78" cy="16" r="3" fill="white"/><circle cx="85" cy="16" r="3" fill="white"/>
+        </svg>
+        <div style="display:flex;flex-direction:column;line-height:1">
+          <span class="logo-name" style="font-size:22px;letter-spacing:-0.5px">Nemo</span>
+          <span style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-top:-2px">CHAT</span>
+        </div>
+      </div>
+      <div class="hbtns">
+        <div class="hbtn">📷</div>
+        <div class="hbtn">⋮</div>
+      </div>
+    </div>
+    <div class="searchbar"><span>🔍</span><span>ابحث أو ابدأ محادثة جديدة</span></div>
+  </div>
+
+  <!-- Stories: only "add your story" -->
+  <div class="stories">
+    <div class="story">
+      <div class="story-ring empty">
+        <div class="story-av">😊</div>
+        <div class="story-plus">+</div>
+      </div>
+      <div class="story-label">قصتي</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="chip on" onclick="setChip(this)">الكل</div>
+    <div class="chip" onclick="setChip(this)">غير مقروءة</div>
+    <div class="chip" onclick="setChip(this)">المفضلة</div>
+    <div class="chip" onclick="setChip(this)">المجموعات</div>
+  </div>
+
+  <!-- Chat list: empty state -->
+  <div class="chatlist" id="chatlist">
+    <div class="empty-state">
+      <div class="empty-icon">💬</div>
+      <div class="empty-title">لا توجد محادثات بعد</div>
+      <div class="empty-sub">ابدئي محادثة جديدة بالضغط على زر ✏️ في الأسفل</div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="openNewChat()">✏️</div>
+
+  <!-- New chat modal -->
+  <div class="modal-overlay" id="newChatModal">
+    <div class="modal-sheet">
+      <div class="modal-title">💬 محادثة جديدة</div>
+      <input class="modal-input" id="newChatName" placeholder="اسم جهة الاتصال..." />
+      <button class="modal-btn" onclick="startChat()">بدء المحادثة</button>
+      <button class="modal-cancel" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+
+  <div class="tabbar" id="home-tabs">
+    <div class="tab on" onclick="homeTab(0,this)"><div class="tab-ic">💬</div><div class="tab-lb">الرسائل</div><div class="tab-dot"></div></div>
+    <div class="tab" onclick="homeTab(1,this)"><div class="tab-ic">📞</div><div class="tab-lb">المكالمات</div></div>
+    <div class="tab" onclick="homeTab(2,this)"><div class="tab-ic">🎮</div><div class="tab-lb">الألعاب</div></div>
+    <div class="tab" onclick="homeTab(3,this)"><div class="tab-ic">📡</div><div class="tab-lb">البث</div></div>
+    <div class="tab" onclick="homeTab(4,this)"><div class="tab-ic">⚙️</div><div class="tab-lb">الإعدادات</div></div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: CHAT DETAIL ════════ -->
+<div class="screen hidden" id="s-chat">
+  <div class="statusbar"><span id="clk2">9:41</span><span>📶 🔋</span></div>
+
+  <div class="chat-hdr">
+    <div class="back" onclick="go('s-home')">←</div>
+    <div class="chat-hdr-av" id="chatAv" style="background:linear-gradient(135deg,var(--primary),var(--accent))">😊</div>
+    <div class="chat-hdr-info">
+      <div class="chat-hdr-name" id="chatName">محادثة</div>
+      <div class="chat-hdr-sub" style="color:var(--success)">● متصل</div>
+    </div>
+    <div class="tr-btn" id="trBtn" onclick="toggleAutoTr()">🌐 ترجمة</div>
+    <div class="ibtn" style="flex-shrink:0">📞</div>
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="msg-empty" id="msgsEmpty">
+      <span style="font-size:40px">👋</span>
+      <span>ابدئي المحادثة!</span>
+    </div>
+  </div>
+
+  <div class="gpanel" id="gpanel">
+    <div class="gpanel-title">🎮 اختر لعبة ترسلينها</div>
+    <div class="ggrid">
+      <div class="gcard" onclick="sendGame('لودو','🎲')"><span class="gc-em">🎲</span><div class="gc-name">لودو</div><div class="gc-pl">2-4 لاعبين</div></div>
+      <div class="gcard" onclick="sendGame('الشطرنج','♟️')"><span class="gc-em">♟️</span><div class="gc-name">الشطرنج</div><div class="gc-pl">لاعبان</div></div>
+      <div class="gcard" onclick="sendGame('XO','✖️')"><span class="gc-em">✖️</span><div class="gc-name">XO</div><div class="gc-pl">لاعبان</div></div>
+      <div class="gcard" onclick="sendGame('أكل الخبز','🃏')"><span class="gc-em">🃏</span><div class="gc-name">أكل الخبز</div><div class="gc-pl">2-6 لاعبين</div></div>
+    </div>
+  </div>
+
+  <div class="efx" id="efx">
+    <div class="efx-chip" style="background:rgba(6,182,212,0.2);color:var(--cyan)" onclick="sendEfx('👻 رسالة مختفية')">👻 مختفية</div>
+    <div class="efx-chip" style="background:rgba(168,85,247,0.2);color:var(--accent)" onclick="sendEfx('🎨 رسم')">🎨 رسم</div>
+    <div class="efx-chip" style="background:rgba(99,102,241,0.2);color:var(--primary)" onclick="sendEfx('🎁 هدية')">🎁 هدية</div>
+    <div class="efx-chip" style="background:rgba(16,185,129,0.2);color:var(--success)" onclick="sendEfx('📍 موقعي')">📍 موقع</div>
+  </div>
+
+  <div class="input-area">
+    <div class="ibtn" id="gBtn" onclick="toggleGames()">🎮</div>
+    <div class="ibtn" id="eBtn" onclick="toggleEfx()">✨</div>
+    <textarea class="minput" id="msgIn" placeholder="اكتب رسالة..." rows="1"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+    <button class="sbtn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: GAMES ════════ -->
+<div class="screen hidden" id="s-games">
+  <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+  <div class="gs-header"><span style="font-size:24px">🎮</span><span class="gs-title">الألعاب المدمجة</span></div>
+  <div class="gs-grid">
+    <div class="gs-card"><span class="gs-em">🎲</span><div class="gs-name">لودو</div><div class="gs-pl">2-4 لاعبين</div><div class="gs-online">● 342 أونلاين</div></div>
+    <div class="gs-card"><span class="gs-em">♟️</span><div class="gs-name">الشطرنج</div><div class="gs-pl">لاعبان</div><div class="gs-online">● 128 أونلاين</div></div>
+    <div class="gs-card"><span class="gs-em">✖️</span><div class="gs-name">XO</div><div class="gs-pl">لاعبان</div><div class="gs-online">● 89 أونلاين</div></div>
+    <div class="gs-card"><span class="gs-em">🃏</span><div class="gs-name">أكل الخبز</div><div class="gs-pl">2-6 لاعبين</div><div class="gs-online">● 211 أونلاين</div></div>
+    <div class="gs-card"><span class="gs-em">🏏</span><div class="gs-name">كريكيت</div><div class="gs-pl">متعدد</div><div class="gs-online gs-soon">قريباً</div></div>
+    <div class="gs-card"><span class="gs-em">🎯</span><div class="gs-name">دارتس</div><div class="gs-pl">لاعبان</div><div class="gs-online gs-soon">قريباً</div></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab" onclick="go('s-home')"><div class="tab-ic">💬</div><div class="tab-lb">الرسائل</div></div>
+    <div class="tab" onclick="go('s-home')"><div class="tab-ic">📞</div><div class="tab-lb">المكالمات</div></div>
+    <div class="tab on"><div class="tab-ic">🎮</div><div class="tab-lb">الألعاب</div><div class="tab-dot"></div></div>
+    <div class="tab" onclick="go('s-live')"><div class="tab-ic">📡</div><div class="tab-lb">البث</div></div>
+    <div class="tab" onclick="go('s-settings')"><div class="tab-ic">⚙️</div><div class="tab-lb">الإعدادات</div></div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: LIVE ════════ -->
+<div class="screen hidden" id="s-live">
+  <div class="live-bg" id="liveBg">
+    <div class="live-close-btn" onclick="go('s-home')">✕</div>
+    <div class="live-av-big">📡</div>
+    <div class="live-badge"><span class="blink">🔴</span> LIVE</div>
+    <div class="live-name">البث المباشر</div>
+    <div class="live-view">👁️ ابدئي بثك الآن</div>
+    <div class="live-acts">
+      <div class="lact" onclick="reactLive('❤️')">❤️<div class="lact-n">0</div></div>
+      <div class="lact" onclick="reactLive('🔥')">🔥<div class="lact-n">0</div></div>
+      <div class="lact">🎁<div class="lact-n">هدية</div></div>
+      <div class="lact">📤<div class="lact-n">مشاركة</div></div>
+    </div>
+    <div class="live-comments" id="liveCmts"></div>
+  </div>
+  <!-- Revenue bar -->
+  <div class="revenue-bar">
+    <div class="rev-item rev-viewers">👁️ <span id="viewCount">0</span> مشاهد</div>
+    <div class="rev-item rev-coins">💰 <span id="earnedCoins">0</span> عملة</div>
+    <div class="rev-item rev-hearts">❤️ <span id="heartCount">0</span></div>
+  </div>
+  <div class="live-bar">
+    <input class="live-inp" id="liveIn" placeholder="اكتب تعليق..." onkeydown="liveComment(event)">
+    <span class="lreact" onclick="reactLive('❤️')">❤️</span>
+    <button class="support-live-btn" onclick="openGifts()">🎁 هدية</button>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: SETTINGS ════════ -->
+<div class="screen hidden" id="s-settings">
+  <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+  <div class="sets-scroll">
+    <div class="profile-card">
+      <div class="pav">😊</div>
+      <div><div class="pname">ملفي الشخصي</div><div class="pstatus">● متصل الآن</div></div>
+      <button class="pedit">تعديل</button>
+    </div>
+
+    <div class="sets-sec">
+      <div class="sets-lbl">إمكانية الوصول — الصم والبكم</div>
+      <div class="sets-grp">
+        <div class="srow"><span class="sic">🤟</span><div class="srow-txt"><div class="slbl">وضع الصم والبكم</div><div class="ssub">تحويل الصوت لنص فوري</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow"><span class="sic">😶‍🌫️</span><div class="srow-txt"><div class="slbl">تعبيرات الوجه المبالغة</div><div class="ssub">للتواصل المرئي</div></div><div class="tgl" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow"><span class="sic">📝</span><div class="srow-txt"><div class="slbl">تحويل الكلام لنص</div><div class="ssub">في المكالمات</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+      </div>
+    </div>
+
+    <div class="sets-sec">
+      <div class="sets-lbl">الترجمة</div>
+      <div class="sets-grp">
+        <div class="srow"><span class="sic">🌐</span><div class="srow-txt"><div class="slbl">ترجمة تلقائية</div><div class="ssub">ترجمة كل رسالة واردة</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow"><span class="sic">🗣️</span><div class="srow-txt"><div class="slbl">لغة الترجمة</div><div class="ssub">الإنجليزية</div></div><span class="sarr">›</span></div>
+      </div>
+    </div>
+
+    <div class="sets-sec">
+      <div class="sets-lbl">الخصوصية</div>
+      <div class="sets-grp">
+        <div class="srow"><span class="sic">👁️</span><div class="srow-txt"><div class="slbl">حالة الاتصال</div><div class="ssub">الأصدقاء فقط</div></div><span class="sarr">›</span></div>
+        <div class="srow"><span class="sic">📸</span><div class="srow-txt"><div class="slbl">صورة الملف الشخصي</div><div class="ssub">الأصدقاء فقط</div></div><span class="sarr">›</span></div>
+        <div class="srow"><span class="sic">🔒</span><div class="srow-txt"><div class="slbl">تشفير من طرف لطرف</div><div class="ssub">مفعّل دائماً</div></div><div class="tgl on"><div class="tgl-k"></div></div></div>
+      </div>
+    </div>
+    <div class="sets-sec">
+      <div class="sets-lbl">🤖 الذكاء الاصطناعي</div>
+      <div class="sets-grp">
+        <div class="srow" onclick="go('s-ai')">
+          <span class="sic">🤖</span>
+          <div class="srow-txt"><div class="slbl">مساعد Nemo الذكي</div><div class="ssub">يرد على عملائك تلقائياً</div></div>
+          <span style="font-size:10px;background:linear-gradient(135deg,var(--primary),var(--cyan));color:white;padding:3px 8px;border-radius:8px;font-weight:700;margin-left:6px">جديد</span>
+          <span class="sarr">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sets-sec">
+      <div class="sets-lbl">الإشعارات</div>
+      <div class="sets-grp">
+        <div class="srow"><span class="sic">🔔</span><div class="srow-txt"><div class="slbl">إشعارات الرسائل</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow"><span class="sic">📡</span><div class="srow-txt"><div class="slbl">إشعارات البث المباشر</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow"><span class="sic">🎮</span><div class="srow-txt"><div class="slbl">دعوات الألعاب</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab" onclick="go('s-home')"><div class="tab-ic">💬</div><div class="tab-lb">الرسائل</div></div>
+    <div class="tab" onclick="go('s-home')"><div class="tab-ic">📞</div><div class="tab-lb">المكالمات</div></div>
+    <div class="tab" onclick="go('s-games')"><div class="tab-ic">🎮</div><div class="tab-lb">الألعاب</div></div>
+    <div class="tab" onclick="go('s-live')"><div class="tab-ic">📡</div><div class="tab-lb">البث</div></div>
+    <div class="tab on"><div class="tab-ic">⚙️</div><div class="tab-lb">الإعدادات</div><div class="tab-dot"></div></div>
+  </div>
+</div>
+
+
+  <!-- Gifts Panel -->
+  <div class="gifts-panel" id="giftsPanel">
+    <div class="gifts-sheet">
+      <div class="gifts-title">🎁 أرسل هدية</div>
+      <div class="gifts-balance">💰 رصيدك: <span id="userCoins">500</span> عملة</div>
+      <div class="gifts-grid">
+        <div class="gift-item" onclick="sendGift('ورد','🌹',10)"><span class="gift-em">🌹</span><div class="gift-name">ورد</div><div class="gift-price">10 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('قلب','💎',50)"><span class="gift-em">💎</span><div class="gift-name">ماسة</div><div class="gift-price">50 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('صاروخ','🚀',100)"><span class="gift-em">🚀</span><div class="gift-name">صاروخ</div><div class="gift-price">100 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('تاج','👑',500)"><span class="gift-em">👑</span><div class="gift-name">تاج</div><div class="gift-price">500 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('قلب','❤️‍🔥',20)"><span class="gift-em">❤️‍🔥</span><div class="gift-name">قلب نار</div><div class="gift-price">20 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('نجمة','⭐',30)"><span class="gift-em">⭐</span><div class="gift-name">نجمة</div><div class="gift-price">30 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('فراشة','🦋',80)"><span class="gift-em">🦋</span><div class="gift-name">فراشة</div><div class="gift-price">80 🪙</div></div>
+        <div class="gift-item" onclick="sendGift('سيارة','🏎️',200)"><span class="gift-em">🏎️</span><div class="gift-name">سيارة</div><div class="gift-price">200 🪙</div></div>
+      </div>
+      <button class="buy-coins-btn" onclick="openCoinsShop()">💰 شراء عملات</button>
+      <button class="support-btn-live" onclick="showSupport()">💜 دعم مباشر</button>
+      <button class="gifts-close" onclick="closeGifts()">إغلاق</button>
+    </div>
+  </div>
+
+  <!-- Coins Shop -->
+  <div class="coins-panel" id="coinsPanel">
+    <div class="coins-sheet">
+      <div class="coins-title">💰 شراء عملات Nimo</div>
+      <div class="coins-sub">العملات تُستخدم لإرسال الهدايا للمذيعين</div>
+      <div class="coins-grid">
+        <div class="coin-pack" onclick="buyCoin(100,'0.99')">
+          <span class="coin-em">🪙</span>
+          <div class="coin-amount">100</div>
+          <div class="coin-price">0.99 $</div>
+        </div>
+        <div class="coin-pack popular" onclick="buyCoin(500,'3.99')">
+          <div class="popular-tag">الأكثر شيوعاً</div>
+          <span class="coin-em">💰</span>
+          <div class="coin-amount">500</div>
+          <div class="coin-price">3.99 $</div>
+        </div>
+        <div class="coin-pack" onclick="buyCoin(1000,'6.99')">
+          <span class="coin-em">💎</span>
+          <div class="coin-amount">1,000</div>
+          <div class="coin-price">6.99 $</div>
+        </div>
+        <div class="coin-pack" onclick="buyCoin(5000,'24.99')">
+          <span class="coin-em">👑</span>
+          <div class="coin-amount">5,000</div>
+          <div class="coin-price">24.99 $</div>
+        </div>
+      </div>
+      <div class="coins-note">🔒 الدفع آمن عبر Apple Pay / Google Pay / بطاقة بنكية<br>نيمو تأخذ 30% — المذيع يأخذ 70%</div>
+      <button class="coins-close" onclick="closeCoins()">إغلاق</button>
+    </div>
+  </div>
+
+<!-- AI SCREEN -->
+<div class="screen hidden" id="s-ai">
+  <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+  <div class="ai-header">
+    <div class="back" onclick="go('s-settings')">←</div>
+    <div class="ai-av">🤖</div>
+    <div style="flex:1">
+      <div class="ai-title">مساعد Nemo الذكي</div>
+      <div class="ai-sub" id="aiStatusTxt">● يعمل الآن — يرد بدلاً عنك</div>
+    </div>
+    <div class="ai-pulse" id="aiPulse"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;scrollbar-width:none;padding-bottom:20px">
+    <div class="ai-stats" style="margin-top:14px">
+      <div class="ai-stat"><div class="ai-stat-num" id="aiReplied">0</div><div class="ai-stat-lbl">ردود تلقائية</div></div>
+      <div class="ai-stat"><div class="ai-stat-num" id="aiSatisfied">0%</div><div class="ai-stat-lbl">رضا العملاء</div></div>
+      <div class="ai-stat"><div class="ai-stat-num" id="aiActive">0</div><div class="ai-stat-lbl">محادثات نشطة</div></div>
+    </div>
+    <div class="ai-toggle-row">
+      <div class="ai-av" style="width:40px;height:40px;font-size:18px">🤖</div>
+      <div class="ai-toggle-info">
+        <div class="ai-toggle-label">الرد التلقائي بالذكاء الاصطناعي</div>
+        <div class="ai-toggle-sub">يرد على العملاء عند غيابك</div>
+      </div>
+      <div class="tgl on" id="aiMainToggle" onclick="toggleAIMode(this)"><div class="tgl-k"></div></div>
+    </div>
+    <div class="ai-config">
+      <div>
+        <div class="ai-section-lbl">👤 هوية المشروع</div>
+        <div class="biz-card">
+          <div class="biz-card-title">⚡ مشروعك على Nemo</div>
+          <div class="biz-card-sub">الذكاء الاصطناعي يتعرف على مشروعك ويرد باسمه على العملاء تلقائياً</div>
+        </div>
+        <textarea class="ai-textarea" id="bizName" placeholder="اسم مشروعك — مثال: متجر الأزياء رنا" rows="2"></textarea>
+      </div>
+      <div>
+        <div class="ai-section-lbl">📝 وصف المشروع وما تقدمه</div>
+        <textarea class="ai-textarea" id="bizDesc" placeholder="مثال: نبيع عبايات وفساتين نسائية، التوصيل خلال 3 أيام، الدفع كاش أو تحويل..." rows="4"></textarea>
+      </div>
+      <div>
+        <div class="ai-section-lbl">🎭 أسلوب الرد</div>
+        <div class="ai-tone-row">
+          <div class="tone-chip on" onclick="setTone(this)">😊 ودي</div>
+          <div class="tone-chip" onclick="setTone(this)">💼 رسمي</div>
+          <div class="tone-chip" onclick="setTone(this)">⚡ سريع</div>
+          <div class="tone-chip" onclick="setTone(this)">🎯 مبيعات</div>
+        </div>
+      </div>
+      <div>
+        <div class="ai-section-lbl">❓ أسئلة شائعة (اختياري)</div>
+        <textarea class="ai-textarea" id="bizFAQ" placeholder="س: كم سعر التوصيل؟ ج: مجاني فوق 50 ريال&#10;س: هل يوجد إرجاع؟ ج: نعم خلال 7 أيام" rows="4"></textarea>
+      </div>
+      <div>
+        <div class="ai-section-lbl">🔑 مفتاح Claude API (لتفعيل الذكاء الحقيقي)</div>
+        <input type="password" class="ai-textarea" id="apiKeyInput" placeholder="sk-ant-api03-..." style="min-height:auto;padding:12px 14px;resize:none"/>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.8">
+          📌 احصلي على مفتاح مجاني من <span style="color:var(--primary);font-weight:700">console.anthropic.com</span><br>
+          بدونه يعمل بردود ذكية جاهزة ✅
+        </div>
+      </div>
+      <button class="ai-save-btn" onclick="saveAIConfig()">💾 حفظ الإعدادات</button>
+    </div>
+  </div>
+</div>
+</div><!-- /phone -->
+
+<script>
+// Clock
+function tick() {
+  const t = new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('#clk,#clk2').forEach(e=>e.textContent=t);
+}
+tick(); setInterval(tick,10000);
+
+// Navigation
+let cur = 's-home';
+function go(id) {
+  document.getElementById(cur).classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
+  cur = id;
+  if(id==='s-chat') setTimeout(()=>{const m=document.getElementById('msgs');m.scrollTop=m.scrollHeight;},50);
+}
+
+function homeTab(i,el) {
+  if(i===2){go('s-games');return;}
+  if(i===3){go('s-live');return;}
+  if(i===4){go('s-settings');return;}
+  document.querySelectorAll('#home-tabs .tab').forEach(t=>{t.classList.remove('on');const d=t.querySelector('.tab-dot');if(d)d.remove();});
+  el.classList.add('on');
+  if(!el.querySelector('.tab-dot')){const d=document.createElement('div');d.className='tab-dot';el.appendChild(d);}
+}
+
+function setChip(el) {
+  document.querySelectorAll('.filters .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ── Chats management ──
+let chats = [];
+function openNewChat() { document.getElementById('newChatModal').classList.add('show'); document.getElementById('newChatName').focus(); }
+function closeModal() { document.getElementById('newChatModal').classList.remove('show'); document.getElementById('newChatName').value=''; }
+
+const avatarEmojis = ['😊','🌟','🎯','🌸','🦋','🎨','🌺','⭐','🦄','🌈'];
+function startChat() {
+  const name = document.getElementById('newChatName').value.trim();
+  if(!name) return;
+  const av = avatarEmojis[Math.floor(Math.random()*avatarEmojis.length)];
+  const chat = { id: Date.now(), name, av, msgs: [], unread: 0 };
+  chats.push(chat);
+  renderChats();
+  closeModal();
+  openChat(chat.id);
+}
+function renderChats() {
+  const list = document.getElementById('chatlist');
+  if(chats.length===0){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">لا توجد محادثات بعد</div><div class="empty-sub">ابدئي محادثة جديدة بالضغط على زر ✏️ في الأسفل</div></div>`;
+    return;
+  }
+  list.innerHTML = chats.map(c=>`
+    <div class="chat-item" onclick="openChat(${c.id})">
+      <div class="av-wrap">
+        <div class="av">${c.av}</div>
+        <div class="sdot s-on"></div>
+      </div>
+      <div class="chat-info">
+        <div class="cname">${c.name}</div>
+        <div class="cmsg">${c.msgs.length>0?c.msgs[c.msgs.length-1].text:'ابدئي المحادثة...'}</div>
+      </div>
+      <div class="chat-meta">
+        <div class="ctime">${c.msgs.length>0?c.msgs[c.msgs.length-1].time:''}</div>
+        ${c.unread>0?`<div class="badge">${c.unread}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ── Chat detail ──
+let activeChatId = null;
+let autoTr = false;
+let gOpen=false, eOpen=false;
+
+function openChat(id) {
+  activeChatId = id;
+  const chat = chats.find(c=>c.id===id);
+  if(!chat) return;
+  chat.unread = 0;
+  document.getElementById('chatName').textContent = chat.name;
+  document.getElementById('chatAv').textContent = chat.av;
+  renderMsgs(chat);
+  renderChats();
+  go('s-chat');
+}
+function renderMsgs(chat) {
+  const area = document.getElementById('msgs');
+  const empty = chat.msgs.length===0;
+  area.innerHTML = empty
+    ? `<div class="msg-empty" id="msgsEmpty"><span style="font-size:40px">👋</span><span>ابدئي المحادثة!</span></div>`
+    : chat.msgs.map(m=>`
+      <div class="mrow ${m.own?'own':'other'}">
+        <div>
+          <div class="mbubble ${m.own?'own':m.type==='game'?'game':'other'}">
+            ${m.isAI?'<div class="ai-badge-msg">🤖 Nemo AI</div>':''}
+            ${m.type==='game'?`<span style="font-size:32px;display:block;margin-bottom:6px">${m.gameEm}</span><div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px">${m.gameTitle}</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px">دعوة للعب</div>${!m.own?`<button class="modal-btn" style="padding:8px">انضم الآن 🎮</button>`:''}`
+            :m.text}
+            <div class="mtime">${m.time}${m.own?' ✓✓':''}</div>
+          </div>
+          ${!m.own&&m.tr?`<div class="tr-tag" onclick="toggleTr(this)">🌐 ترجمة</div><div class="tr-box ${autoTr?'show':''}">${m.tr}</div>`:``}
+        </div>
+      </div>`).join('');
+  area.scrollTop = area.scrollHeight;
+}
+
+function getTime(){return new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});}
+
+function sendMsg() {
+  const inp = document.getElementById('msgIn');
+  const text = inp.value.trim();
+  if(!text || !activeChatId) return;
+  const chat = chats.find(c=>c.id===activeChatId);
+  chat.msgs.push({text, own:true, time:getTime()});
+  renderMsgs(chat); renderChats();
+  inp.value=''; inp.style.height='auto';
+  gOpen=false; eOpen=false;
+  document.getElementById('gpanel').classList.remove('show');
+  document.getElementById('efx').classList.remove('show');
+  document.getElementById('gBtn').classList.remove('on');
+  document.getElementById('eBtn').classList.remove('on');
+}
+
+function sendGame(title, em) {
+  const chat = chats.find(c=>c.id===activeChatId);
+  chat.msgs.push({text:'', own:true, time:getTime(), type:'game', gameTitle:title, gameEm:em});
+  renderMsgs(chat); renderChats();
+  toggleGames();
+}
+function sendEfx(label) {
+  const chat = chats.find(c=>c.id===activeChatId);
+  chat.msgs.push({text:label, own:true, time:getTime()});
+  renderMsgs(chat); renderChats();
+  toggleEfx();
+}
+
+function toggleGames(){gOpen=!gOpen;eOpen=false;document.getElementById('gpanel').classList.toggle('show',gOpen);document.getElementById('efx').classList.remove('show');document.getElementById('gBtn').classList.toggle('on',gOpen);document.getElementById('eBtn').classList.remove('on');}
+function toggleEfx(){eOpen=!eOpen;gOpen=false;document.getElementById('efx').classList.toggle('show',eOpen);document.getElementById('gpanel').classList.remove('show');document.getElementById('eBtn').classList.toggle('on',eOpen);document.getElementById('gBtn').classList.remove('on');}
+function toggleAutoTr(){autoTr=!autoTr;document.getElementById('trBtn').classList.toggle('on',autoTr);document.getElementById('trBtn').textContent=autoTr?'🌐 تلقائي ✓':'🌐 ترجمة';if(autoTr)document.querySelectorAll('.tr-box').forEach(b=>b.classList.add('show'));}
+function toggleTr(el){const b=el.nextElementSibling;b.classList.toggle('show');el.textContent=b.classList.contains('show')?'🌐 إخفاء':'🌐 ترجمة';}
+
+// ── Live ──
+let liveReacts={heart:0,fire:0};
+function reactLive(em) {
+  const bg=document.getElementById('liveBg');
+  const el=document.createElement('div');
+  el.className='float-e'; el.textContent=em;
+  el.style.left=(15+Math.random()*60)+'%'; el.style.bottom='80px';
+  bg.appendChild(el); setTimeout(()=>el.remove(),1900);
+}
+function liveComment(e) {
+  if(e.key!=='Enter') return;
+  const inp=document.getElementById('liveIn');
+  const text=inp.value.trim(); if(!text) return;
+  const cmts=document.getElementById('liveCmts');
+  const d=document.createElement('div'); d.className='lcmt';
+  d.innerHTML=`<span>😊</span><span class="lcmt-txt">أنت: ${text}</span>`;
+  cmts.appendChild(d); inp.value='';
+  if(cmts.children.length>3) cmts.removeChild(cmts.children[0]);
+}
+
+// ── Monetization ──
+let userCoins = 500;
+let streamerEarned = 0;
+let viewers = 0;
+let hearts = 0;
+
+// Simulate viewers joining
+function startLiveCounters() {
+  setInterval(() => {
+    viewers += Math.floor(Math.random() * 3);
+    document.getElementById('viewCount').textContent = viewers;
+  }, 2000);
+}
+startLiveCounters();
+
+function openGifts() { document.getElementById('giftsPanel').classList.add('show'); }
+function closeGifts() { document.getElementById('giftsPanel').classList.remove('show'); }
+function openCoinsShop() { closeGifts(); document.getElementById('coinsPanel').classList.add('show'); }
+function closeCoins() { document.getElementById('coinsPanel').classList.remove('show'); }
+
+function buyCoin(amount, price) {
+  userCoins += amount;
+  document.getElementById('userCoins').textContent = userCoins;
+  closeCoins();
+  showToast(`✅ اشتريتِ ${amount} عملة بنجاح!`);
+  openGifts();
+}
+
+function sendGift(name, em, cost) {
+  if(userCoins < cost) {
+    closeGifts();
+    setTimeout(() => openCoinsShop(), 300);
+    return;
+  }
+  userCoins -= cost;
+  document.getElementById('userCoins').textContent = userCoins;
+  
+  // Streamer earns 70%
+  const earned = Math.floor(cost * 0.7);
+  streamerEarned += earned;
+  document.getElementById('earnedCoins').textContent = streamerEarned;
+  
+  closeGifts();
+  
+  // Show gift floating on live
+  const bg = document.getElementById('liveBg');
+  
+  // Big gift emoji float
+  for(let i=0;i<3;i++){
+    setTimeout(()=>{
+      const el = document.createElement('div');
+      el.className = 'float-e'; el.textContent = em;
+      el.style.left = (10 + Math.random()*70) + '%';
+      el.style.bottom = '80px';
+      bg.appendChild(el);
+      setTimeout(()=>el.remove(),1900);
+    }, i*200);
+  }
+  
+  // Gift notification banner
+  const notif = document.createElement('div');
+  notif.className = 'gift-notif';
+  notif.innerHTML = `<span class="gift-notif-em">${em}</span><span class="gift-notif-txt">أرسلتِ ${name}!</span><span class="gift-notif-val">${cost} 🪙</span>`;
+  bg.appendChild(notif);
+  setTimeout(()=>notif.remove(), 2600);
+  
+  // Add comment
+  const cmts = document.getElementById('liveCmts');
+  const d = document.createElement('div'); d.className = 'lcmt';
+  d.innerHTML = `<span>${em}</span><span class="lcmt-txt" style="color:var(--warning)">أنت أرسلت ${name} ${em}</span>`;
+  cmts.appendChild(d);
+  if(cmts.children.length>3) cmts.removeChild(cmts.children[0]);
+}
+
+function showSupport() {
+  closeGifts();
+  showToast('💜 شكراً على دعمك للمذيع!');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--fg);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+// Heart counter
+const origReactLive = reactLive;
+window.reactLive = function(em) {
+  origReactLive(em);
+  if(em==='❤️') { hearts++; document.getElementById('heartCount').textContent=hearts; }
+}
+
+
+// ══ AI ASSISTANT ══
+let aiEnabled = true;
+let aiConf = { bizName:'', bizDesc:'', tone:'ودي', faq:'', apiKey:'' };
+let aiCount = 0;
+
+function toggleAIMode(el) {
+  el.classList.toggle('on');
+  aiEnabled = el.classList.contains('on');
+  const txt = document.getElementById('aiStatusTxt');
+  const pulse = document.getElementById('aiPulse');
+  if(aiEnabled){ txt.textContent='● يعمل الآن — يرد بدلاً عنك'; txt.style.color='var(--success)'; pulse.style.display='block'; }
+  else { txt.textContent='⏸ متوقف'; txt.style.color='var(--muted)'; pulse.style.display='none'; }
+}
+
+function setTone(el) {
+  document.querySelectorAll('.tone-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  aiConf.tone = el.textContent.trim();
+}
+
+function saveAIConfig() {
+  aiConf.bizName = document.getElementById('bizName').value.trim();
+  aiConf.bizDesc = document.getElementById('bizDesc').value.trim();
+  aiConf.faq = document.getElementById('bizFAQ').value.trim();
+  aiConf.apiKey = document.getElementById('apiKeyInput').value.trim();
+  showToast('✅ تم حفظ إعدادات الذكاء الاصطناعي');
+  setTimeout(()=>go('s-settings'), 1200);
+}
+
+async function getAIReply(userMsg) {
+  if(aiConf.apiKey && aiConf.apiKey.startsWith('sk-ant')) {
+    try {
+      const sys = aiConf.bizName
+        ? 'أنت مساعد ذكي لمشروع "' + aiConf.bizName + '". ' + (aiConf.bizDesc||'') + ' ' + (aiConf.faq||'') + ' أسلوبك: ' + aiConf.tone + '. رد بالعربي باختصار في جملة أو جملتين.'
+        : 'أنت مساعد ذكي على Nemo Chat. أسلوبك ' + aiConf.tone + '. رد بالعربي باختصار.';
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:120, system:sys, messages:[{role:'user',content:userMsg}] })
+      });
+      const data = await res.json();
+      if(data.content && data.content[0]) return data.content[0].text;
+    } catch(e) {}
+  }
+  return localReply(userMsg);
+}
+
+function localReply(msg) {
+  const m = msg.toLowerCase();
+  const biz = aiConf.bizName || 'مشروعنا';
+  if(/سلام|مرحبا|هلا|صباح|مساء|كيف/.test(m)) return 'أهلاً وسهلاً! كيف أقدر أساعدك؟ 😊';
+  if(/سعر|كم|بكم|تكلف/.test(m)) return aiConf.bizDesc ? 'بخصوص الأسعار — ' + aiConf.bizDesc.slice(0,70) + '... راسلنا للتفاصيل 👍' : 'أرسل لنا المنتج اللي تبيه وأرسل لك السعر مباشرة 💪';
+  if(/توصيل|شحن|متى/.test(m)) return 'التوصيل خلال 2-4 أيام عمل 🚀';
+  if(/موجود|متوفر|عندكم/.test(m)) return 'نعم متوفر! أرسلي تفاصيل الطلب 📦';
+  if(/شكر|يعطيك/.test(m)) return 'العفو، يسعدنا خدمتك دائماً! 💜';
+  if(/أطلب|اشتري|ابي|محتاج/.test(m)) return 'ممتاز! أرسلي تفاصيل طلبك وأجهزه لك فوراً 🎉';
+  const def = ['شكراً لتواصلك مع ' + biz + '! سنرد عليك قريباً 💜','رسالتك وصلت — سنرد في أقرب وقت ⚡','أهلاً! كيف أقدر أساعدك؟ 😊'];
+  return def[Math.floor(Math.random()*def.length)];
+}
+
+async function triggerAIReply(chatId) {
+  if(!aiEnabled) return;
+  const chat = chats.find(c=>c.id===chatId);
+  if(!chat) return;
+  const area = document.getElementById('msgs');
+  // typing indicator
+  const t = document.createElement('div');
+  t.id='ai-typing'; t.className='ai-typing';
+  t.innerHTML='<div class="ai-typing-av">🤖</div><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  if(area){area.appendChild(t);area.scrollTop=area.scrollHeight;}
+  const lastOwn = chat.msgs.filter(m=>m.own).slice(-1)[0];
+  const reply = await getAIReply(lastOwn ? lastOwn.text : '');
+  const typing = document.getElementById('ai-typing');
+  if(typing) typing.remove();
+  chat.msgs.push({text:reply, own:false, time:getTime(), isAI:true});
+  aiCount++;
+  document.getElementById('aiReplied').textContent = aiCount;
+  document.getElementById('aiSatisfied').textContent = Math.min(97, 70+aiCount*4)+'%';
+  document.getElementById('aiActive').textContent = chats.length;
+  renderMsgs(chat); renderChats();
+}
+
+// Wrap sendMsg to fire AI reply
+const _origSend = sendMsg;
+window.sendMsg = function() {
+  _origSend();
+  if(aiEnabled && activeChatId) {
+    const delay = 900 + Math.random()*1000;
+    setTimeout(()=>triggerAIReply(activeChatId), delay);
+  }
+};
+
+
+// ══ FIREBASE REAL MESSAGING ══
+let currentListener = null;
+let myUserId = null;
+
+window.addEventListener('fbReady', () => {
+  window._fb.auth && window._fb.auth.onAuthStateChanged && 
+  getAuthUser();
+});
+
+function getAuthUser() {
+  if(!window._fb) return;
+  window._fb.auth.onAuthStateChanged(user => {
+    if(user) { myUserId = user.uid; console.log('Auth:', myUserId); }
+  });
+}
+
+// Override openChat to listen to real Firebase messages
+const _origOpenChat = openChat;
+window.openChat = function(id) {
+  // Stop previous listener
+  if(currentListener) { currentListener(); currentListener = null; }
+  
+  activeChatId = id;
+  const chat = chats.find(c => c.id === id);
+  if(!chat) return;
+  chat.unread = 0;
+  document.getElementById('chatName').textContent = chat.name;
+  document.getElementById('chatAv').textContent = chat.av;
+  renderChats();
+  go('s-chat');
+
+  // Listen to real messages from Firebase
+  if(window._fb) {
+    const { db, collection, query, orderBy, onSnapshot } = window._fb;
+    const chatId = 'chat_' + id;
+    const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'asc'));
+    currentListener = onSnapshot(q, (snapshot) => {
+      const fbMsgs = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        fbMsgs.push({
+          id: doc.id,
+          text: d.text,
+          own: d.userId === myUserId,
+          time: d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}) : getTime(),
+          isAI: d.isAI || false,
+          type: d.type || 'text',
+          gameTitle: d.gameTitle,
+          gameEm: d.gameEm
+        });
+      });
+      chat.msgs = fbMsgs;
+      renderMsgs(chat);
+    });
+  }
+};
+
+// Override sendMsg to save to Firebase
+const _origSendMsg2 = window.sendMsg;
+window.sendMsg = async function() {
+  const inp = document.getElementById('msgIn');
+  const text = inp.value.trim();
+  if(!text || !activeChatId) return;
+
+  inp.value = ''; inp.style.height = 'auto';
+  gOpen = false; eOpen = false;
+  document.getElementById('gpanel').classList.remove('show');
+  document.getElementById('efx').classList.remove('show');
+  document.getElementById('gBtn').classList.remove('on');
+  document.getElementById('eBtn').classList.remove('on');
+
+  if(window._fb) {
+    const { db, collection, addDoc, serverTimestamp } = window._fb;
+    const chatId = 'chat_' + activeChatId;
+    await addDoc(collection(db, 'chats', chatId, 'messages'), {
+      text,
+      userId: myUserId || 'anon',
+      timestamp: serverTimestamp(),
+      isAI: false,
+      type: 'text'
+    });
+    // Save chat info
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'chatList', String(activeChatId)), {
+      name: chats.find(c=>c.id===activeChatId)?.name || '',
+      lastMsg: text,
+      updatedAt: serverTimestamp()
+    }, {merge: true});
+  } else {
+    // Fallback local
+    const chat = chats.find(c=>c.id===activeChatId);
+    if(chat) { chat.msgs.push({text, own:true, time:getTime()}); renderMsgs(chat); renderChats(); }
+  }
+
+  // AI reply
+  if(aiEnabled && activeChatId) {
+    setTimeout(async () => {
+      const reply = await getAIReply(text);
+      if(window._fb) {
+        const { db, collection, addDoc, serverTimestamp } = window._fb;
+        const chatId = 'chat_' + activeChatId;
+        await addDoc(collection(db, 'chats', chatId, 'messages'), {
+          text: reply,
+          userId: 'ai-nemo',
+          timestamp: serverTimestamp(),
+          isAI: true,
+          type: 'text'
+        });
+        aiCount++;
+        document.getElementById('aiReplied').textContent = aiCount;
+        document.getElementById('aiSatisfied').textContent = Math.min(97, 70+aiCount*4)+'%';
+        document.getElementById('aiActive').textContent = chats.length;
+      }
+    }, 1000 + Math.random()*800);
+  }
+};
+
+// Game invite to Firebase
+const _origSendGame2 = sendGame;
+window.sendGame = async function(title, em) {
+  if(window._fb && activeChatId) {
+    const { db, collection, addDoc, serverTimestamp } = window._fb;
+    const chatId = 'chat_' + activeChatId;
+    await addDoc(collection(db, 'chats', chatId, 'messages'), {
+      text: '',
+      userId: myUserId || 'anon',
+      timestamp: serverTimestamp(),
+      type: 'game',
+      gameTitle: title,
+      gameEm: em
+    });
+  }
+  toggleGames();
+};
+
+// Connection status indicator
+function showConnectionStatus(online) {
+  let bar = document.getElementById('conn-bar');
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'conn-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-weight:700;z-index:9999;transition:all 0.3s;font-family:Cairo,sans-serif';
+    document.body.appendChild(bar);
+  }
+  if(online) {
+    bar.style.background = '#10B981'; bar.style.color = 'white';
+    bar.textContent = '✅ متصل — الرسائل تُحفظ مباشرة';
+    setTimeout(() => bar.style.display = 'none', 3000);
+  } else {
+    bar.style.background = '#F43F5E'; bar.style.color = 'white';
+    bar.style.display = 'block';
+    bar.textContent = '⚠️ انقطع الاتصال — تأكدي من النت';
+  }
+}
+
+window.addEventListener('online', () => showConnectionStatus(true));
+window.addEventListener('offline', () => showConnectionStatus(false));
+window.addEventListener('fbReady', () => showConnectionStatus(true));
+
+</script>
+</body>
+</html>
