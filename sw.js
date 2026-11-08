@@ -2,9 +2,9 @@
 // الإصدار: 1.0.0
 // يخزّن الواجهة مؤقتاً حتى يشتغل التطبيق بدون إنترنت
 
-const CACHE_NAME = 'nemo-chat-v1';
+const CACHE_NAME = 'nemo-chat-v2';
 const STATIC_ASSETS = [
-  './nemo-chat-live.html',
+  './index.html',
   './nemo-icon-192.png',
   './nemo-icon-512.png',
   './manifest.json'

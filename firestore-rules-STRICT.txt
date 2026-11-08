@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    // chat ids look like  chat_<uidA>_<uidB>  (the two real Firebase uids, sorted)
+    function inChat(chatId) {
+      return signedIn() && chatId.matches('.*' + request.auth.uid + '.*');
+    }
+    function otherUid(chatId) {
+      return chatId.replace('chat_', '').replace(request.auth.uid, '').replace('_', '');
+    }
+    // true when the OTHER person has blocked the signed-in user
+    function blockedBy(other) {
+      return request.auth.uid in get(/databases/$(database)/documents/users/$(other)).data.get('blocked', []);
+    }
+    // the login id is the part of the account email before the @
+    function myLoginId() {
+      return request.auth.token.email.split('@')[0];
+    }
+
+    // Profile (contains the encrypted private key, block list, contacts): owner only
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && request.resource.data.uid == uid;
+    }
+
+    // Public encryption keys: any signed-in user can fetch ONE key (get), nobody can list them;
+    // only the owner can write
+    match /keys/{uid} {
+      allow get: if signedIn();
+      allow create, update: if isOwner(uid) && request.resource.data.uid == uid;
+      allow delete: if isOwner(uid);
+    }
+
+    // Recovery blob (the password encrypted with the recovery key). One document can be fetched
+    // before login (needed for "forgot password") but it is useless without the 16-character
+    // recovery key, and it cannot be listed. Only the account that owns that login id can write it,
+    // so nobody can squat a name.
+    match /recovery/{hid} {
+      allow get: if true;
+      allow create, update: if signedIn() && myLoginId() == hid && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && myLoginId() == hid;
+    }
+
+    // Presence: any signed-in user can look ONE id up (to add a friend) but cannot list everybody;
+    // only the account that first claimed the id can change it
+    match /presence/{nemoId} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == resource.data.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Messages: only the two participants; nobody blocked can write; edit/delete only your own
+    match /chats/{chatId}/messages/{msgId} {
+      allow read: if inChat(chatId);
+      allow create: if inChat(chatId)
+                    && request.resource.data.get('senderUid', request.auth.uid) == request.auth.uid
+                    && !blockedBy(otherUid(chatId));
+      allow update: if inChat(chatId)
+                    && resource.data.get('senderUid', '') == request.auth.uid
+                    && request.resource.data.get('senderUid', '') == resource.data.get('senderUid', '');
+      allow delete: if inChat(chatId)
+                    && resource.data.get('senderUid', '') == request.auth.uid;
+    }
+
+    match /chatList/{chatId} {
+      allow read, write: if inChat(chatId);
+    }
+
+    // Calls: only the caller and the callee; a blocked user cannot ring the blocker
+    match /calls/{callId} {
+      allow create: if signedIn()
+                    && request.resource.data.callerUid == request.auth.uid
+                    && !(request.auth.uid in get(/databases/$(database)/documents/users/$(request.resource.data.calleeUid)).data.get('blocked', []));
+      allow get, list: if signedIn() && resource.data.calleeUid == request.auth.uid;
+      allow get, list: if signedIn() && resource.data.callerUid == request.auth.uid;
+      allow update: if signedIn()
+                    && (resource.data.calleeUid == request.auth.uid
+                        || resource.data.callerUid == request.auth.uid);
+
+      match /{sub}/{docId} {
+        allow read, write: if signedIn()
+          && (get(/databases/$(database)/documents/calls/$(callId)).data.calleeUid == request.auth.uid
+              || get(/databases/$(database)/documents/calls/$(callId)).data.callerUid == request.auth.uid);
+      }
+    }
+
+    // Abuse reports: any signed-in user can file one; nobody can read them from the app
+    // (you read them in the Firebase console: Firestore Database > Data > reports)
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid;
+    }
+  }
+}

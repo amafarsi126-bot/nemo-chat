@@ -2,7 +2,7 @@
   "name": "نيمو شات",
   "short_name": "نيمو",
   "description": "تطبيق الدردشة العربي للمجتمع النسائي الخليجي",
-  "start_url": "./nemo-chat-live.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1a0533",
   "theme_color": "#7c3aed",
