@@ -294,7 +294,8 @@ body {
 }
 .screen.hidden { transform: translateX(-100%); opacity: 0; pointer-events: none; }
 /* Status bar */
-.statusbar {
+.statusbar { display:none !important; }
+.statusbar-old {
   height: 48px; background: var(--bg);
   display: flex; align-items: flex-end; justify-content: space-between;
   padding: 0 20px 8px; font-size: 12px; font-weight: 700;
@@ -1044,8 +1045,7 @@ body {
         <span class="logo-name">Nemo</span>
       </div>
       <div class="hbtns">
-        <div class="hbtn" onclick="go('s-pub-profile')">📷</div>
-        <div class="hbtn">⋮</div>
+        <div class="hbtn" onclick="inviteFriend()" aria-label="دعوة صديقة">💌</div>
       </div>
     </div>
     <div class="searchbar" onclick="document.getElementById('homeSearchInp').focus()">
@@ -1157,6 +1157,9 @@ body {
   <div class="attach-menu" id="attachMenu">
     <div class="attach-opt" onclick="document.getElementById('fileImgInput').click();closeAttach()"><span>🖼️</span><span>صورة</span></div>
     <div class="attach-opt" onclick="document.getElementById('fileDocInput').click();closeAttach()"><span>📄</span><span>ملف</span></div>
+    <div class="attach-opt" onclick="closeAttach();openRecorder('video')"><span>🎥</span><span>فيديو</span></div>
+    <div class="attach-opt" onclick="closeAttach();toggleGames()"><span>🎮</span><span>ألعاب</span></div>
+    <div class="attach-opt" onclick="closeAttach();toggleEfx()"><span>✨</span><span>مؤثرات</span></div>
   </div>
   <!-- Encryption badge -->
   <div class="enc-badge"><span>🔒</span> <span id="chatEncBadge">الاتصال مشفّر (HTTPS)</span></div>
@@ -1170,9 +1173,11 @@ body {
   </div>
   <div class="input-area">
     <div class="ibtn" id="sBtn" onclick="toggleStk()" aria-label="ايموجي وملصقات">😊</div>
-    <div class="ibtn" id="gBtn" onclick="toggleGames()">🎮</div>
-    <div class="ibtn" id="eBtn" onclick="toggleEfx()">✨</div>
-    <div class="ibtn" onclick="toggleAttach()">📎</div>
+    <div class="ibtn" id="gBtn" onclick="toggleGames()" style="display:none">🎮</div>
+    <div class="ibtn" id="eBtn" onclick="toggleEfx()" style="display:none">✨</div>
+    <div class="ibtn" onclick="toggleAttach()" aria-label="مرفقات">📎</div>
+    <div class="ibtn" onclick="document.getElementById('fileCamInput').click()" aria-label="كاميرا">📷</div>
+    <div class="ibtn" onclick="openRecorder('audio')" aria-label="رسالة صوتية">🎤</div>
     <textarea class="minput" id="msgIn" placeholder="اكتب رسالة..." rows="1"
       oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
@@ -1280,26 +1285,26 @@ body {
     <div class="sets-sec">
       <div class="sets-lbl">إمكانية الوصول — الصم والبكم</div>
       <div class="sets-grp">
-        <div class="srow"><span class="sic">🤟</span><div class="srow-txt"><div class="slbl">وضع الصم والبكم</div><div class="ssub">تحويل الصوت لنص فوري</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
-        <div class="srow"><span class="sic">😶‍🌫️</span><div class="srow-txt"><div class="slbl">تعبيرات الوجه المبالغة</div><div class="ssub">للتواصل المرئي</div></div><div class="tgl" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
-        <div class="srow"><span class="sic">📝</span><div class="srow-txt"><div class="slbl">تحويل الكلام لنص</div><div class="ssub">في المكالمات</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow" onclick="togglePref('deaf')"><span class="sic">🤟</span><div class="srow-txt"><div class="slbl">وضع الصم والبكم</div><div class="ssub">اهتزاز + وميض عند وصول رسالة</div></div><div class="tgl on" data-pref="deaf"><div class="tgl-k"></div></div></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">😶‍🌫️</span><div class="srow-txt"><div class="slbl">تعبيرات الوجه المبالغة</div><div class="ssub">للتواصل المرئي · قريباً</div></div><span class="sarr">›</span></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">📝</span><div class="srow-txt"><div class="slbl">تحويل الكلام لنص</div><div class="ssub">في المكالمات · قريباً</div></div><span class="sarr">›</span></div>
       </div>
     </div>
 
     <div class="sets-sec">
       <div class="sets-lbl">الترجمة</div>
       <div class="sets-grp">
-        <div class="srow"><span class="sic">🌐</span><div class="srow-txt"><div class="slbl">ترجمة تلقائية</div><div class="ssub">ترجمة كل رسالة واردة</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
-        <div class="srow"><span class="sic">🗣️</span><div class="srow-txt"><div class="slbl">لغة الترجمة</div><div class="ssub">الإنجليزية</div></div><span class="sarr">›</span></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">🌐</span><div class="srow-txt"><div class="slbl">ترجمة تلقائية</div><div class="ssub">ترجمة كل رسالة واردة · قريباً</div></div><span class="sarr">›</span></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">🗣️</span><div class="srow-txt"><div class="slbl">لغة الترجمة</div><div class="ssub">الإنجليزية · قريباً</div></div><span class="sarr">›</span></div>
       </div>
     </div>
 
     <div class="sets-sec">
       <div class="sets-lbl">الخصوصية</div>
       <div class="sets-grp">
-        <div class="srow"><span class="sic">👁️</span><div class="srow-txt"><div class="slbl">حالة الاتصال</div><div class="ssub">الأصدقاء فقط</div></div><span class="sarr">›</span></div>
-        <div class="srow"><span class="sic">📸</span><div class="srow-txt"><div class="slbl">صورة الملف الشخصي</div><div class="ssub">الأصدقاء فقط</div></div><span class="sarr">›</span></div>
-        <div class="srow"><span class="sic">🔒</span><div class="srow-txt"><div class="slbl">التشفير من طرف لطرف</div><div class="ssub">محادثات الأصدقاء مشفّرة ولا يقرأها الخادم. قوتها من قوة كلمة مرورك، وقارني «رمز الأمان» مع صديقتك</div></div></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">👁️</span><div class="srow-txt"><div class="slbl">حالة الاتصال</div><div class="ssub">الأصدقاء فقط · قريباً</div></div><span class="sarr">›</span></div>
+        <div class="srow" onclick="showToast('🚧 قريباً — هذي الميزة تحت التطوير')"><span class="sic">📸</span><div class="srow-txt"><div class="slbl">صورة الملف الشخصي</div><div class="ssub">الأصدقاء فقط · قريباً</div></div><span class="sarr">›</span></div>
+        <div class="srow" onclick="showToast('🔒 رسائلك تُقفل على جهازك ولا يقرؤها الخادم. لرؤية رقم الأمان افتحي المحادثة ثم ⋮')"><span class="sic">🔒</span><div class="srow-txt"><div class="slbl">التشفير من طرف لطرف</div><div class="ssub">للمحادثات الفردية</div></div><span class="sarr">›</span></div>
       </div>
     </div>
     <div class="sets-sec">
@@ -1376,8 +1381,8 @@ body {
     <div class="sets-sec">
       <div class="sets-lbl">تفضيلات الإشعارات</div>
       <div class="sets-grp">
-        <div class="srow"><span class="sic">📡</span><div class="srow-txt"><div class="slbl">إشعارات البث المباشر</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
-        <div class="srow"><span class="sic">🎮</span><div class="srow-txt"><div class="slbl">دعوات الألعاب</div></div><div class="tgl on" onclick="this.classList.toggle('on')"><div class="tgl-k"></div></div></div>
+        <div class="srow" onclick="togglePref('live')"><span class="sic">📡</span><div class="srow-txt"><div class="slbl">إشعارات البث المباشر</div></div><div class="tgl on" data-pref="live"><div class="tgl-k"></div></div></div>
+        <div class="srow" onclick="togglePref('games')"><span class="sic">🎮</span><div class="srow-txt"><div class="slbl">دعوات الألعاب</div></div><div class="tgl on" data-pref="games"><div class="tgl-k"></div></div></div>
       </div>
     </div>
     <div style="height:20px"></div>
@@ -1452,6 +1457,7 @@ body {
     <span style="font-size:12px;color:var(--muted)">معرّفك (اضغطي للنسخ وشاركيه مع صديقاتك)</span>
     <span style="font-size:14px;font-weight:800;color:var(--primary);direction:ltr" id="myIdTxt">----</span>
   </div>
+  <div onclick="inviteFriend()" style="margin:0 16px 10px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:Cairo,sans-serif;color:#fff;font-size:14px;font-weight:800">💌 ادعي صديقة للانضمام</div>
   <!-- Add contact box -->
   <div class="add-contact-box" id="addContactBox" style="display:none">
     <div class="add-contact-title">🤝 إضافة صديق بالـ ID</div>
@@ -1506,6 +1512,7 @@ body {
 </div>
 
 <!-- Hidden file inputs -->
+<input type="file" id="fileCamInput" accept="image/*" capture="environment" style="display:none" onchange="handleImgUpload(event)">
 <input type="file" id="fileImgInput" accept="image/*" style="display:none" onchange="handleImgUpload(event)">
 <input type="file" id="fileDocInput" accept=".pdf,.doc,.docx,.txt,.xlsx,.pptx" style="display:none" onchange="handleDocUpload(event)">
 
@@ -1733,6 +1740,16 @@ function setChip(el) {
 
 // ── Chats management ──
 let chats = [];
+function inviteFriend() {
+  const url = location.href.split('#')[0].split('?')[0];
+  const id = myUserId ? '\nمعرّفي: ' + myUserId : '';
+  const text = 'تعالي نتواصل على نيمو شات 💜 بدون رقم هاتف ومحادثات مشفّرة.\nافتحي الرابط من Safari أو Chrome (مو من داخل واتساب):\n' + url + id;
+  if(navigator.share) {
+    navigator.share({ title: 'نيمو شات', text: text }).catch(function(){});
+    return;
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
 function copyMyId() {
   if(!myUserId) return;
   const done = () => showToast('✅ تم نسخ معرّفك: ' + myUserId);
@@ -1836,6 +1853,12 @@ function renderMsgs(chat) {
       bbl.appendChild(big); bbl.appendChild(lb);
     } else if(m.type==='game') {
       bbl.innerHTML = `<span style="font-size:32px;display:block;margin-bottom:6px">${esc(m.gameEm)}</span><div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px">${esc(m.gameTitle)}</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px">دعوة للعب</div>${!m.own?'<button class="modal-btn" style="padding:8px">انضم الآن 🎮</button>':''}`;
+    } else if(m.type==='audio' && /^data:audio\//i.test(m.fileData||'')) {
+      const au = document.createElement('audio'); au.controls = true; au.preload = 'metadata'; au.src = m.fileData; au.style.cssText = 'max-width:230px;height:40px';
+      bbl.appendChild(au);
+    } else if(m.type==='video' && /^data:video\//i.test(m.fileData||'')) {
+      const vd = document.createElement('video'); vd.controls = true; vd.playsInline = true; vd.preload = 'metadata'; vd.src = m.fileData; vd.style.cssText = 'max-width:230px;border-radius:12px;display:block';
+      bbl.appendChild(vd);
     } else if(m.type==='image' && m.fileData) {
       const img = document.createElement('img');
       img.className='msg-img'; img.src = /^data:image\//i.test(m.fileData) ? m.fileData : '';
@@ -3346,11 +3369,103 @@ let attachOpen = false;
 function toggleAttach() { attachOpen=!attachOpen; document.getElementById('attachMenu')?.classList.toggle('show',attachOpen); }
 function closeAttach() { attachOpen=false; document.getElementById('attachMenu')?.classList.remove('show'); }
 
-function handleImgUpload(e) {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async(ev) => await sendFileMsg('image', ev.target.result, file.name, file.size);
-  reader.readAsDataURL(file); e.target.value='';
+function compressImage(file) {
+  return new Promise(function(resolve) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function() {
+      let max = 1280, q = 0.72, out = '';
+      for(let i = 0; i < 5; i++) {
+        const sc = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL('image/jpeg', q);
+        if(out.length < 600000) break;
+        max = Math.round(max*0.75); q = Math.max(0.5, q-0.06);
+      }
+      URL.revokeObjectURL(url); resolve(out);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+async function handleImgUpload(e) {
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  showToast('⏳ تجهيز الصورة...');
+  const data = await compressImage(file);
+  if(!data) { showToast('⚠️ تعذّر قراءة الصورة'); return; }
+  await sendFileMsg('image', data, file.name || 'photo.jpg', Math.round(data.length*0.75));
+}
+
+// ── Voice & video messages ──
+let _rec = null;
+function pickMime(kind) {
+  const list = kind === 'video'
+    ? ['video/webm;codecs=vp8,opus','video/webm','video/mp4']
+    : ['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'];
+  if(!window.MediaRecorder) return null;
+  for(const m of list) { try { if(MediaRecorder.isTypeSupported(m)) return m; } catch(_){} }
+  return '';
+}
+async function openRecorder(kind) {
+  if(!activeChatId) { showToast('افتحي محادثة أولاً'); return; }
+  if(_rec) return;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || pickMime(kind) === null) {
+    showToast('⚠️ المتصفح ما يدعم التسجيل. افتحيه من Safari أو Chrome'); return;
+  }
+  const MAX = kind === 'video' ? 10 : 60;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia(kind === 'video' ? { audio:true, video:{ facingMode:'user', width:{ideal:480}, height:{ideal:640} } } : { audio:true }); }
+  catch(e) { showToast('⚠️ اسمحي للموقع باستخدام ' + (kind==='video'?'الكاميرا والمايك':'المايك')); return; }
+  const mime = pickMime(kind);
+  let mr;
+  try { mr = new MediaRecorder(stream, Object.assign(mime ? { mimeType: mime } : {}, kind==='video' ? { videoBitsPerSecond: 280000, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 })); }
+  catch(e) { stream.getTracks().forEach(t=>t.stop()); showToast('⚠️ تعذّر بدء التسجيل'); return; }
+  const chunks = [];
+  mr.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Cairo,sans-serif;color:#fff';
+  if(kind === 'video') {
+    const v = document.createElement('video'); v.muted = true; v.autoplay = true; v.playsInline = true; v.srcObject = stream;
+    v.style.cssText = 'width:min(80vw,320px);border-radius:18px;background:#000;transform:scaleX(-1)';
+    ov.appendChild(v);
+  } else {
+    const ic = document.createElement('div'); ic.textContent = '🎤'; ic.style.cssText = 'font-size:72px'; ov.appendChild(ic);
+  }
+  const tm = document.createElement('div'); tm.style.cssText = 'font-size:22px;font-weight:800;direction:ltr'; tm.textContent = '● 0:00'; ov.appendChild(tm);
+  const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:12px';
+  const mk = (t, bg) => { const b = document.createElement('button'); b.textContent = t; b.style.cssText = 'padding:12px 22px;border:none;border-radius:24px;font-family:Cairo,sans-serif;font-size:15px;font-weight:800;color:#fff;background:'+bg; return b; };
+  const bCancel = mk('إلغاء', '#475569'), bSend = mk('إيقاف وإرسال ➤', '#7c3aed');
+  row.appendChild(bCancel); row.appendChild(bSend); ov.appendChild(row);
+  document.body.appendChild(ov);
+  let t0 = Date.now(), cancelled = false, finished = false;
+  const tick = setInterval(() => {
+    const sec = Math.floor((Date.now()-t0)/1000);
+    tm.textContent = '● ' + Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0') + ' / ' + (kind==='video'?'0:10':'1:00');
+    if(sec >= MAX) finish(false);
+  }, 250);
+  function cleanup() { clearInterval(tick); stream.getTracks().forEach(t=>t.stop()); ov.remove(); _rec = null; }
+  function finish(cancel) {
+    if(finished) return; finished = true; cancelled = cancel;
+    try { mr.state !== 'inactive' ? mr.stop() : onstop(); } catch(_) { onstop(); }
+  }
+  async function onstop() {
+    cleanup();
+    if(cancelled || !chunks.length) return;
+    const blob = new Blob(chunks, { type: mr.mimeType || mime || (kind==='video'?'video/webm':'audio/webm') });
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const data = reader.result;
+      if(data.length > 650000) { showToast('⚠️ التسجيل كبير، سجّلي أقصر'); return; }
+      await sendFileMsg(kind, data, kind === 'video' ? 'video' : 'voice', blob.size);
+    };
+    reader.readAsDataURL(blob);
+  }
+  mr.onstop = onstop;
+  bCancel.onclick = () => finish(true);
+  bSend.onclick = () => finish(false);
+  _rec = mr;
+  try { mr.start(500); } catch(e) { cleanup(); showToast('⚠️ تعذّر بدء التسجيل'); }
 }
 
 function handleDocUpload(e) {
@@ -3364,7 +3479,7 @@ function handleDocUpload(e) {
 async function sendFileMsg(type, data, name, size) {
   if(!activeChatId) return;
   showToast('⏳ جاري الإرسال...');
-  const caption = type === 'image' ? '📷 صورة' : '📄 ' + name;
+  const caption = type === 'image' ? '📷 صورة' : type === 'audio' ? '🎤 رسالة صوتية' : type === 'video' ? '🎥 فيديو' : '📄 ' + name;
   const fileData = data.length < 650000 ? data : '[كبير جداً]';
   if(window._fb) {
     try { await postMessage({ type, fileData, fileName: name, fileSize: size, text: caption }); }
@@ -3376,6 +3491,28 @@ async function sendFileMsg(type, data, name, size) {
   showToast('✅ تم الإرسال');
 }
 
+
+// ── Preferences (persisted) ──
+const PREF_DEFAULTS = { deaf:true, live:true, games:true };
+function getPref(k){ try{ const v=localStorage.getItem('nemo_pref_'+k); return v===null ? PREF_DEFAULTS[k] : v==='1'; }catch(e){ return PREF_DEFAULTS[k]; } }
+function togglePref(k){
+  const v=!getPref(k);
+  try{ localStorage.setItem('nemo_pref_'+k, v?'1':'0'); }catch(e){}
+  syncPrefUI();
+  if(k==='deaf'){ showToast(v ? '🤟 وضع الصم مفعّل: اهتزاز ووميض عند وصول رسالة' : 'تم إيقاف وضع الصم'); if(v) alertIncoming(); }
+}
+function syncPrefUI(){ document.querySelectorAll('.tgl[data-pref]').forEach(function(t){ t.classList.toggle('on', getPref(t.dataset.pref)); }); }
+function alertIncoming(){
+  if(!getPref('deaf')) return;
+  try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+  const f=document.createElement('div');
+  f.style.cssText='position:fixed;inset:0;z-index:9999;pointer-events:none;border:8px solid #a855f7;box-shadow:inset 0 0 60px rgba(168,85,247,.7);opacity:1;transition:opacity .9s';
+  document.body.appendChild(f);
+  setTimeout(function(){ f.style.opacity='0'; }, 60);
+  setTimeout(function(){ f.remove(); }, 1100);
+}
+document.addEventListener('DOMContentLoaded', syncPrefUI);
+try{ syncPrefUI(); }catch(e){}
 // Patch renderMsgs for file rendering + notifications
 let _lastMsgCount = {};
 const _baseRenderMsgs = renderMsgs;
@@ -3412,6 +3549,7 @@ window.renderMsgs = function(chat) {
   if(curr > prev && prev > 0) {
     const last = chat.msgs[curr-1];
     if(last && !last.own && !last.isAI) {
+      alertIncoming();
       _updateUnreadBadge(1);
       _sendNotif('رسالة جديدة من '+chat.name, last.text||'📷 صورة');
       if(activeChatId !== chat.id) { chat.unread=(chat.unread||0)+1; renderChats(); }
@@ -4638,13 +4776,9 @@ function listenForIncomingCalls() {
 })();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
-  });
-  // مسح كل الكاش
-  if ('caches' in window) {
-    caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
-  }
+  // service worker بسيط بدون كاش (يضمن ظهور آخر نسخة دائماً) ويسمح بتثبيت التطبيق على الشاشة الرئيسية
+  if ('caches' in window) { caches.keys().then(keys => keys.forEach(key => caches.delete(key))).catch(function(){}); }
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('sw', e); }); });
 }
 
 </script>
